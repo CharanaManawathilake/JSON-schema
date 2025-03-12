@@ -1,6 +1,7 @@
 package org.example;
 
 import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
+import io.ballerina.compiler.syntax.tree.NodeParser;
 
 import java.util.Map;
 
@@ -15,6 +16,7 @@ public class GeneratorUtil {
     public static final String INTEGER = "int";
     public static final String SEMI_COLON = ";";
     public static final String COMMA = ",";
+    public static final String NEW_LINE = "\n";
 
     public static final String ANNOTATION_MODULE = "jsondata";
     public static final String NUMBER_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "NumberValidation";
@@ -28,16 +30,16 @@ public class GeneratorUtil {
     public static final String ARRAY_VALIDATION = AT + ANNOTATION_MODULE + COLON + "ArrayValidation";
     public static final String OBJECT_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "ObjectValidation";
 
-    public static String createType(Map<?,?> nodes, String name, Schema schema, Object type){
+    public static String createType(Map<String, ModuleMemberDeclarationNode> nodes, String name, Schema schema, Object type){
         if (type == Long.class) {
-            System.out.println("This is an int");
+            return createInteger(nodes, name, schema.minimum(),schema.exclusiveMinimum(), schema.maximum(), schema.exclusiveMaximum(), schema.multipleOf());
         } else if (type == String.class) {
             System.out.println("This is a string");
         }
         return "HELLO";
     }
 
-    public static String createInteger(Map<?,?> nodes, String name, Long minimum, Long maximum, Long exclusiveMaximum, Long exclusiveMinimum, Long multipleOf){
+    public static String createInteger(Map<String, ModuleMemberDeclarationNode> nodes, String name, Double minimum, Double exclusiveMinimum, Double maximum, Double exclusiveMaximum, Double multipleOf){
         String finalName = resolveNameConflicts(convertToCamelCase(name), nodes);
 
         if (minimum==null && maximum==null && exclusiveMaximum==null && exclusiveMinimum==null && multipleOf==null){
@@ -48,24 +50,28 @@ public class GeneratorUtil {
         annotation.append(NUMBER_ANNOTATION).append(OPEN_BRACES);
 
         if (minimum!=null) {
-            annotation.append(MINIMUM).append(COLON).append(WHITESPACE).append(minimum.toString()).append(COMMA);
+            annotation.append(MINIMUM).append(COLON).append(minimum.toString()).append(COMMA);
         }
         if (exclusiveMinimum!=null){
-            annotation.append(EXCLUSIVE_MINIMUM).append(COLON).append(WHITESPACE).append(exclusiveMinimum.toString()).append(COMMA);
+            annotation.append(EXCLUSIVE_MINIMUM).append(COLON).append(exclusiveMinimum.toString()).append(COMMA);
         }
         if (maximum!=null) {
-            annotation.append(MAXIMUM).append(COLON).append(WHITESPACE).append(maximum.toString()).append(COMMA);
+            annotation.append(MAXIMUM).append(COLON).append(maximum.toString()).append(COMMA);
         }
         if (exclusiveMaximum!=null) {
-            annotation.append(EXCLUSIVE_MAXIMUM).append(COLON).append(WHITESPACE).append(exclusiveMaximum.toString()).append(COMMA);
+            annotation.append(EXCLUSIVE_MAXIMUM).append(COLON).append(exclusiveMaximum.toString()).append(COMMA);
         }
         if (multipleOf!=null){
-            annotation.append(MULTIPLE_OF).append(COLON).append(WHITESPACE).append(multipleOf.toString()).append(COMMA);
+            annotation.append(MULTIPLE_OF).append(COLON).append(multipleOf.toString()).append(COMMA);
         }
 
-//        annotation.appended
+        annotation.deleteCharAt(annotation.length() - 1).append(CLOSE_BRACES).append(NEW_LINE);
+        annotation.append(TYPE).append(WHITESPACE).append(finalName).append(WHITESPACE).append(INTEGER).append(SEMI_COLON);
 
-        return "HELLO";
+        ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(annotation.toString());
+        nodes.put(finalName, moduleNode);
+
+        return finalName;
     }
 
     public static String resolveNameConflicts(String name, Map<?, ?> nodes) {

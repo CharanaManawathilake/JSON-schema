@@ -5,6 +5,8 @@ import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
 
 import java.util.*;
 
+import static org.example.GeneratorUtil.createType;
+
 public class Generator {
     public static final String TYPE = "type";
     public static final String INTEGER = "int";
@@ -97,7 +99,8 @@ public class Generator {
             schemaType.remove(Class.class);
             if (schemaType.size() == 1) {
                 // TODO: Create only a single type.
-
+                String tempName = createType(nodes, name, schema, schemaType.getFirst());
+                System.out.println(tempName);
             } else {
                 for(Object element : schemaType) {
                     //TODO: Create types for each of these.
