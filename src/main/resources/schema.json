@@ -1,8 +1,14 @@
 {
-  "type": [
-    "integer",
-    "string"
+  "type": "array",
+  "prefixItems": [
+    {
+      "type": "string"
+    },
+    {
+      "type": "integer"
+    }
   ],
-  "multipleOf": 5,
-  "maximum": 100
+  "items": {
+    "type": "boolean"
+  }
 }

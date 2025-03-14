@@ -4,8 +4,9 @@ import com.google.gson.internal.LinkedTreeMap;
 import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
 import io.ballerina.compiler.syntax.tree.NodeParser;
 
-import java.util.ArrayList;
-import java.util.Map;
+import java.util.*;
+
+import static org.example.Generator.convert;
 
 public class GeneratorUtil {
     public static final String PUBLIC = "public";
@@ -28,7 +29,10 @@ public class GeneratorUtil {
     public static final String NUMBER = "int|float|decimal";
     public static final String BOOLEAN = "boolean";
     public static final String NEVER = "never";
+    public static final String NULL = "()";
     public static final String JSON = "json";
+    public static final String UNIVERSAL_ARRAY = "json[]";
+    public static final String UNIVERSAL_OBJECT = "record{}";
 
     public static final String ANNOTATION_MODULE = "jsondata";
     public static final String NUMBER_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "NumberValidation";
@@ -59,8 +63,15 @@ public class GeneratorUtil {
             return createNumber(nodes, name, schema.minimum(), schema.exclusiveMinimum(), schema.maximum(), schema.exclusiveMaximum(), schema.multipleOf());
         } else if (type == String.class) {
             return createString(nodes, name, schema.format(), schema.minLength(), schema.maxLength(), schema.pattern());
+        } else if (type == Boolean.class) {
+            return BOOLEAN;
+        } else if (type == null) {
+            return NULL;
+        } else if (type == ArrayList.class) {
+            return createArray(nodes, name, schema.prefixItems(), schema.items(), schema.contains(), schema.minItems(), schema.maxItems(), schema.uniqueItems(), schema.maxContains(), schema.minContains());
+        } else {
+            return createObject(nodes, name);
         }
-        return "HELLO";
     }
 
     public static String createInteger(Map<String, ModuleMemberDeclarationNode> nodes, String name, Double minimum, Double exclusiveMinimum, Double maximum, Double exclusiveMaximum, Double multipleOf){
@@ -168,6 +179,18 @@ public class GeneratorUtil {
         return finalName;
     }
 
+    public static String createArray(Map<String, ModuleMemberDeclarationNode> nodes, String name, Object prefixItems, Object items, Object contains, Long minItems, Long maxItems, Boolean uniqueItems, Long maxContains, Long minContains){
+//        ArrayList<String> arrayItems = new ArrayList<>();
+//        for (Object item : prefixItems){
+//            arrayItems.add(convert(item))
+//        }
+        return "HELLO";
+    }
+
+    public static String createObject(Map<String, ModuleMemberDeclarationNode> nodes, String name){
+        return "HELLO";
+    }
+
     public static boolean isValidFormat(String format) {
         //TODO: Return true if the format is a valid JSON format.
         return true;
@@ -201,7 +224,7 @@ public class GeneratorUtil {
             return "String";
         }
         if (type == Boolean.class) {
-            return "Boolean";
+            return "Boolean"; // Actually not needed here as there are no keywords for type Boolean
         }
         if (type == ArrayList.class) {
             return "Array";

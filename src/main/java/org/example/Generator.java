@@ -1,6 +1,7 @@
 package org.example;
 
 import com.google.gson.internal.LinkedTreeMap;
+import io.ballerina.compiler.api.TypeBuilder;
 import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
 
 import java.util.*;
@@ -83,7 +84,13 @@ public class Generator {
         return new ArrayList<>();
     }
 
-    public static String convert(Schema schema, String name, Map<String, ModuleMemberDeclarationNode> nodes) {
+    public static String convert(Object schemaObject, String name, Map<String, ModuleMemberDeclarationNode> nodes) {
+        if (schemaObject instanceof Boolean){
+            boolean boolValue = (Boolean) schemaObject;
+            return boolValue ? JSON : NEVER;
+        }
+        Schema schema = (Schema) schemaObject;
+
         ArrayList<Object> schemaType = getCommonType(schema.enumKeyword(), schema.constKeyword(), schema.type());
         // This can be a type or a value.
         if (schemaType.isEmpty()) {
@@ -99,6 +106,9 @@ public class Generator {
                 for(Object element : schemaType) {
                     String subtypeName = name + getBallerinaType(element);
                     unionTypes.add(createType(nodes, subtypeName, schema, element));
+                }
+                if (unionTypes.containsAll(Set.of(INTEGER, NUMBER, BOOLEAN, STRING, UNIVERSAL_ARRAY, UNIVERSAL_OBJECT, NULL))){
+                    return JSON;
                 }
                 if (unionTypes.contains(NUMBER)){
                     unionTypes.remove(NUMBER);

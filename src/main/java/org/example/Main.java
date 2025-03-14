@@ -10,7 +10,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
 
 import static org.example.Generator.convert;
 import static org.example.GeneratorUtil.*;
@@ -29,7 +31,16 @@ public class Main {
 
         try {
             String jsonContent = new String(Files.readAllBytes(jsonSchema.toPath()));
-            Schema schema = gson.fromJson(jsonContent, Schema.class);
+
+            Object schema;
+            //! Handle this \n issue
+            if ("true\n".equals(jsonContent)) {
+                schema = true;
+            } else if ("false\n".equals(jsonContent)) {
+                schema = false;
+            } else {
+                schema = gson.fromJson(jsonContent, Schema.class);
+            }
 
             Map<String, ModuleMemberDeclarationNode> nodes = new LinkedHashMap<>();
 
