@@ -4,9 +4,9 @@ import com.google.gson.internal.LinkedTreeMap;
 import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
 import io.ballerina.compiler.syntax.tree.NodeParser;
 
-import java.util.*;
-
-import static org.example.Generator.convert;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class GeneratorUtil {
     public static final String PUBLIC = "public";
@@ -21,6 +21,10 @@ public class GeneratorUtil {
     public static final String NEW_LINE = "\n";
     public static final String BACK_TICK = "`";
     public static final String REGEX_PREFIX = "re";
+    public static final String PIPE = "|";
+    public static final String REST = "...";
+    public static final String OPEN_SQUARE_BRACKET = "[";
+    public static final String CLOSE_SQUARE_BRACKET = "]";
 
     public static final String INTEGER = "int";
     public static final String STRING = "string";
@@ -70,7 +74,8 @@ public class GeneratorUtil {
         } else if (type == ArrayList.class) {
             return createArray(nodes, name, schema.prefixItems(), schema.items(), schema.contains(), schema.minItems(), schema.maxItems(), schema.uniqueItems(), schema.maxContains(), schema.minContains());
         } else {
-            return createObject(nodes, name);
+            return UNIVERSAL_OBJECT;
+//            return createObject(nodes, name);
         }
     }
 
@@ -179,12 +184,34 @@ public class GeneratorUtil {
         return finalName;
     }
 
-    public static String createArray(Map<String, ModuleMemberDeclarationNode> nodes, String name, Object prefixItems, Object items, Object contains, Long minItems, Long maxItems, Boolean uniqueItems, Long maxContains, Long minContains){
-//        ArrayList<String> arrayItems = new ArrayList<>();
-//        for (Object item : prefixItems){
-//            arrayItems.add(convert(item))
-//        }
-        return "HELLO";
+    public static String createArray(Map<String, ModuleMemberDeclarationNode> nodes, String name, List<Object> prefixItems, Object items, Object contains, Long minItems, Long maxItems, Boolean uniqueItems, Long maxContains, Long minContains) {
+        ArrayList<String> arrayItems = new ArrayList<>();
+
+        if (prefixItems != null) {
+            for (int i = 0; i < prefixItems.size(); i++) {
+                Object item = prefixItems.get(i);
+                arrayItems.add(Generator.convert(item, name + "Item" + i, nodes)); // Append index to the item name
+            }
+        }
+
+        if (items != null ) {
+            String itemsType = Generator.convert(items, name + "RestItem", nodes); //
+            if (itemsType.contains("|")){
+                itemsType = OPEN_BRACES + itemsType + CLOSE_BRACES + REST;
+                arrayItems.add(itemsType);
+            } else {
+                arrayItems.add(itemsType + REST);
+            }
+        } else {
+            arrayItems.add(JSON + REST);
+        }
+
+        ArrayList<String> tupleList = new ArrayList<>();
+        for (int i = 1; i<arrayItems.size()+1; i++) {
+            tupleList.add(OPEN_SQUARE_BRACKET+String.join(COMMA, arrayItems.subList(0, i))+ CLOSE_SQUARE_BRACKET);
+        }
+
+        return String.join(PIPE, tupleList);
     }
 
     public static String createObject(Map<String, ModuleMemberDeclarationNode> nodes, String name){
@@ -234,4 +261,5 @@ public class GeneratorUtil {
         }
         return "Null";
     }
+
 }

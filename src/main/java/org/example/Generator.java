@@ -1,7 +1,6 @@
 package org.example;
 
 import com.google.gson.internal.LinkedTreeMap;
-import io.ballerina.compiler.api.TypeBuilder;
 import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
 
 import java.util.*;
@@ -87,41 +86,41 @@ public class Generator {
     public static String convert(Object schemaObject, String name, Map<String, ModuleMemberDeclarationNode> nodes) {
         if (schemaObject instanceof Boolean){
             boolean boolValue = (Boolean) schemaObject;
-            return boolValue ? JSON : NEVER;
+            return boolValue ? GeneratorUtil.JSON : GeneratorUtil.NEVER;
         }
         Schema schema = (Schema) schemaObject;
 
         ArrayList<Object> schemaType = getCommonType(schema.enumKeyword(), schema.constKeyword(), schema.type());
         // This can be a type or a value.
         if (schemaType.isEmpty()) {
-            return NEVER;
+            return GeneratorUtil.NEVER;
         } else if (schemaType.contains(Class.class)) {
             //! This is definitely a type
             schemaType.remove(Class.class);
             if (schemaType.size() == 1) {
                 // Only a single type.
-                return createType(nodes, name, schema, schemaType.getFirst());
+                return GeneratorUtil.createType(nodes, name, schema, schemaType.getFirst());
             } else {
                 Set<String> unionTypes = new HashSet<>();
                 for(Object element : schemaType) {
-                    String subtypeName = name + getBallerinaType(element);
-                    unionTypes.add(createType(nodes, subtypeName, schema, element));
+                    String subtypeName = name + GeneratorUtil.getBallerinaType(element);
+                    unionTypes.add(GeneratorUtil.createType(nodes, subtypeName, schema, element));
                 }
-                if (unionTypes.containsAll(Set.of(INTEGER, NUMBER, BOOLEAN, STRING, UNIVERSAL_ARRAY, UNIVERSAL_OBJECT, NULL))){
-                    return JSON;
+                if (unionTypes.containsAll(Set.of(GeneratorUtil.INTEGER, GeneratorUtil.NUMBER, GeneratorUtil.BOOLEAN, GeneratorUtil.STRING, GeneratorUtil.UNIVERSAL_ARRAY, GeneratorUtil.UNIVERSAL_OBJECT, GeneratorUtil.NULL))){
+                    return GeneratorUtil.JSON;
                 }
-                if (unionTypes.contains(NUMBER)){
-                    unionTypes.remove(NUMBER);
-                    unionTypes.add(INTEGER);
-                    unionTypes.add(FLOAT);
-                    unionTypes.add(DECIMAL);
+                if (unionTypes.contains(GeneratorUtil.NUMBER)){
+                    unionTypes.remove(GeneratorUtil.NUMBER);
+                    unionTypes.add(GeneratorUtil.INTEGER);
+                    unionTypes.add(GeneratorUtil.FLOAT);
+                    unionTypes.add(GeneratorUtil.DECIMAL);
                 }
-                return String.join("|", unionTypes);
+                return String.join(PIPE, unionTypes);
             }
         } else {
             // Create an enum.
             //TODO: Constraints validate to enums too, need to cross check them and return the value
-            return schemaType.stream().map(String::valueOf).collect(Collectors.joining("|"));
+            return schemaType.stream().map(String::valueOf).collect(Collectors.joining(PIPE));
         }
     }
 }
