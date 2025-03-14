@@ -1,8 +1,10 @@
 package org.example;
 
+import com.google.gson.internal.LinkedTreeMap;
 import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
 import io.ballerina.compiler.syntax.tree.NodeParser;
 
+import java.util.ArrayList;
 import java.util.Map;
 
 public class GeneratorUtil {
@@ -21,6 +23,8 @@ public class GeneratorUtil {
 
     public static final String INTEGER = "int";
     public static final String STRING = "string";
+    public static final String FLOAT = "float";
+    public static final String DECIMAL = "decimal";
     public static final String NUMBER = "int|float|decimal";
     public static final String BOOLEAN = "boolean";
     public static final String NEVER = "never";
@@ -184,5 +188,27 @@ public class GeneratorUtil {
             return name;
         }
         return Character.toUpperCase(name.charAt(0)) + name.substring(1);
+    }
+
+    public static String getBallerinaType(Object type) {
+        if (type == Long.class) {
+            return "Integer";
+        }
+        if (type == Double.class) {
+            return "Number";
+        }
+        if (type == String.class) {
+            return "String";
+        }
+        if (type == Boolean.class) {
+            return "Boolean";
+        }
+        if (type == ArrayList.class) {
+            return "Array";
+        }
+        if (type == LinkedTreeMap.class) {
+            return "Object";
+        }
+        return "Null";
     }
 }

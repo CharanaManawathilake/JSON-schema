@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
+import io.ballerina.compiler.syntax.tree.NodeParser;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,6 +13,7 @@ import java.nio.file.Files;
 import java.util.*;
 
 import static org.example.Generator.convert;
+import static org.example.GeneratorUtil.*;
 
 public class Main {
     public static File getFileFromResources(String fileName) {
@@ -36,7 +38,11 @@ public class Main {
             // convert() returns the type created (if created), so the usage should be handled here.
             // Here it should be implemented if the type is "int"
             // It should not be implemented if the type is "Schema"
-            System.out.println(typeName);
+            if ( typeName != "Schema"){
+                String schemaDefinition = TYPE + WHITESPACE+ "Schema" + WHITESPACE + typeName + SEMI_COLON;
+                ModuleMemberDeclarationNode schemaNode = NodeParser.parseModuleMemberDeclaration(schemaDefinition);
+                nodes.put("Schema", schemaNode);
+            }
             System.out.println("Hello, World!");
 
         } catch (IOException e) {

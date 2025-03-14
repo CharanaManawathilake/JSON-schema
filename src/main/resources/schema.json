@@ -1,8 +1,8 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "type": "string",
-  "minLength": 3,
-  "maxLength": 10,
-  "pattern": "^[A-Za-z0-9]+$",
-  "format": "email"
+  "type": [
+    "integer",
+    "string"
+  ],
+  "multipleOf": 5,
+  "maximum": 100
 }

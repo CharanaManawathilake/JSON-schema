@@ -4,6 +4,7 @@ import com.google.gson.internal.LinkedTreeMap;
 import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.example.GeneratorUtil.*;
 
@@ -94,19 +95,23 @@ public class Generator {
                 // Only a single type.
                 return createType(nodes, name, schema, schemaType.getFirst());
             } else {
+                Set<String> unionTypes = new HashSet<>();
                 for(Object element : schemaType) {
-                    //TODO: Create types for each of these.
+                    String subtypeName = name + getBallerinaType(element);
+                    unionTypes.add(createType(nodes, subtypeName, schema, element));
                 }
-                //TODO: Then create a type combining all of them.
+                if (unionTypes.contains(NUMBER)){
+                    unionTypes.remove(NUMBER);
+                    unionTypes.add(INTEGER);
+                    unionTypes.add(FLOAT);
+                    unionTypes.add(DECIMAL);
+                }
+                return String.join("|", unionTypes);
             }
         } else {
-            System.out.println("This is an enum");
             // Create an enum.
             //TODO: Constraints validate to enums too, need to cross check them and return the value
+            return schemaType.stream().map(String::valueOf).collect(Collectors.joining("|"));
         }
-
-
-        System.out.println("Hello");
-        return "HELLO";
     }
 }
