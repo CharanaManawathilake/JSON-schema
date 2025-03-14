@@ -25,6 +25,7 @@ public class GeneratorUtil {
     public static final String REST = "...";
     public static final String OPEN_SQUARE_BRACKET = "[";
     public static final String CLOSE_SQUARE_BRACKET = "]";
+    public static final String ZERO = "0";
 
     public static final String INTEGER = "int";
     public static final String STRING = "string";
@@ -41,7 +42,7 @@ public class GeneratorUtil {
     public static final String ANNOTATION_MODULE = "jsondata";
     public static final String NUMBER_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "NumberValidation";
     public static final String STRING_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "StringValidation";
-    public static final String ARRAY_VALIDATION = AT + ANNOTATION_MODULE + COLON + "ArrayValidation";
+    public static final String ARRAY_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "ArrayValidation";
     public static final String OBJECT_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "ObjectValidation";
 
     public static final String MINIMUM = "minimum";
@@ -54,6 +55,13 @@ public class GeneratorUtil {
     public static final String MIN_LENGTH = "minLength";
     public static final String MAX_LENGTH = "maxLength";
     public static final String PATTERN = "pattern";
+
+    public static final String MIN_ITEMS = "minItems";
+    public static final String MAX_ITEMS = "maxItems";
+    public static final String UNIQUE_ITEMS = "uniqueItems";
+    public static final String CONTAINS = "contains";
+    public static final String MIN_CONTAINS = "minContains";
+    public static final String MAX_CONTAINS = "maxContains";
 
     private static final String INVALID_CHARS_PATTERN = ".*[!@$%^&*()_\\-|/\\\\\\s\\d].*";
     private static final String DIGIT_PATTERN = ".*\\d.*";
@@ -187,6 +195,8 @@ public class GeneratorUtil {
     public static String createArray(Map<String, ModuleMemberDeclarationNode> nodes, String name, List<Object> prefixItems, Object items, Object contains, Long minItems, Long maxItems, Boolean uniqueItems, Long maxContains, Long minContains) {
         ArrayList<String> arrayItems = new ArrayList<>();
 
+        name = resolveNameConflicts(convertToPascalCase(name), nodes);
+
         if (prefixItems != null) {
             for (int i = 0; i < prefixItems.size(); i++) {
                 Object item = prefixItems.get(i);
@@ -206,12 +216,56 @@ public class GeneratorUtil {
             arrayItems.add(JSON + REST);
         }
 
+        Long min = (minItems == null) ? 0L : minItems;
+        Long max = (maxItems == null) ? Long.MAX_VALUE : maxItems;
+
         ArrayList<String> tupleList = new ArrayList<>();
         for (int i = 1; i<arrayItems.size()+1; i++) {
-            tupleList.add(OPEN_SQUARE_BRACKET+String.join(COMMA, arrayItems.subList(0, i))+ CLOSE_SQUARE_BRACKET);
+            if (i >= min && i <= max) { //! check if this is exclusive or not
+                tupleList.add(OPEN_SQUARE_BRACKET + String.join(COMMA, arrayItems.subList(0, i)) + CLOSE_SQUARE_BRACKET);
+            }
         }
 
-        return String.join(PIPE, tupleList);
+        if ((minItems == null) && (maxItems == null) && (uniqueItems == null) && (contains == null)) {
+            return String.join(PIPE, tupleList);
+        }
+
+        StringBuilder annotation = new StringBuilder();
+        annotation.append(ARRAY_ANNOTATION).append(OPEN_BRACES);
+
+        if (minItems != null) {
+            annotation.append(MIN_ITEMS).append(COLON).append(minItems.toString()).append(COMMA);
+        }
+        if (maxItems != null) {
+            annotation.append(MAX_ITEMS).append(COLON).append(maxItems.toString()).append(COMMA);
+        }
+        if (uniqueItems != null) {
+            annotation.append(UNIQUE_ITEMS).append(COLON).append(uniqueItems.toString()).append(COMMA);
+        }
+        if (contains != null) {
+            annotation.append(CONTAINS).append(COLON).append(OPEN_BRACES);
+            annotation.append(CONTAINS).append(COLON).append(Generator.convert(contains, resolveNameConflicts(name + convertToPascalCase(CONTAINS),nodes), nodes)).append(COMMA);
+
+            if (minContains == null) {
+                annotation.append(MIN_CONTAINS).append(COLON).append(ZERO).append(COMMA);
+            } else {
+                annotation.append(MIN_CONTAINS).append(COLON).append(minContains.toString()).append(COMMA);
+            }
+
+            if (maxContains!= null) {
+                annotation.append(MAX_CONTAINS).append(COLON).append(maxContains.toString()).append(COMMA);
+            }
+
+            annotation.deleteCharAt(annotation.length() - 1).append(CLOSE_BRACES).append(COMMA);
+        }
+
+        annotation.deleteCharAt(annotation.length()-1).append(CLOSE_BRACES).append(NEW_LINE);
+        annotation.append(TYPE).append(WHITESPACE).append(name).append(WHITESPACE).append(String.join(PIPE, tupleList)).append(SEMI_COLON);
+
+        ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(annotation.toString());
+        nodes.put(name, moduleNode);
+
+        return name;
     }
 
     public static String createObject(Map<String, ModuleMemberDeclarationNode> nodes, String name){
