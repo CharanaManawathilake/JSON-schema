@@ -31,7 +31,12 @@ public class Main {
 
             Map<String, ModuleMemberDeclarationNode> nodes = new LinkedHashMap<>();
 
-            convert(schema, "schema", nodes);
+            String typeName = convert(schema, "Schema", nodes);
+            // This is just the name, it is either "int" or "Schema"
+            // convert() returns the type created (if created), so the usage should be handled here.
+            // Here it should be implemented if the type is "int"
+            // It should not be implemented if the type is "Schema"
+            System.out.println(typeName);
             System.out.println("Hello, World!");
 
         } catch (IOException e) {

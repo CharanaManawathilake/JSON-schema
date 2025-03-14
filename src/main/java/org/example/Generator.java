@@ -5,15 +5,9 @@ import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
 
 import java.util.*;
 
-import static org.example.GeneratorUtil.createType;
+import static org.example.GeneratorUtil.*;
 
 public class Generator {
-    public static final String TYPE = "type";
-    public static final String INTEGER = "int";
-    public static final String NUMBER = "int|float|decimal";
-    public static final String BOOLEAN = "boolean";
-    public static final String ARRAY = "array";
-
     public static ArrayList<Object> getCommonType(ArrayList<Object> enumKeyword, Object constKeyword, ArrayList<String> type) {
         Set<Object> typeList = new HashSet<>();
         Set<Object> finalList = new HashSet<>();
@@ -88,19 +82,17 @@ public class Generator {
         return new ArrayList<>();
     }
 
-    public static void convert(Schema schema, String name, Map<String, ModuleMemberDeclarationNode> nodes) {
+    public static String convert(Schema schema, String name, Map<String, ModuleMemberDeclarationNode> nodes) {
         ArrayList<Object> schemaType = getCommonType(schema.enumKeyword(), schema.constKeyword(), schema.type());
         // This can be a type or a value.
         if (schemaType.isEmpty()) {
-            System.out.println("No valid instances. type Schema never");
-            // TODO: Return a never type.
+            return NEVER;
         } else if (schemaType.contains(Class.class)) {
             //! This is definitely a type
             schemaType.remove(Class.class);
             if (schemaType.size() == 1) {
-                // TODO: Create only a single type.
-                String tempName = createType(nodes, name, schema, schemaType.getFirst());
-                System.out.println(tempName);
+                // Only a single type.
+                return createType(nodes, name, schema, schemaType.getFirst());
             } else {
                 for(Object element : schemaType) {
                     //TODO: Create types for each of these.
@@ -115,5 +107,6 @@ public class Generator {
 
 
         System.out.println("Hello");
+        return "HELLO";
     }
 }
