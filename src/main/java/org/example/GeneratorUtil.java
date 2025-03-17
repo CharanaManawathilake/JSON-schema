@@ -62,6 +62,7 @@ public class GeneratorUtil {
     public static final String CONTAINS = "contains";
     public static final String MIN_CONTAINS = "minContains";
     public static final String MAX_CONTAINS = "maxContains";
+    public static final String UNEVALUATED_ITEMS = "unevaluatedItems";
 
     private static final String INVALID_CHARS_PATTERN = ".*[!@$%^&*()_\\-|/\\\\\\s\\d].*";
     private static final String DIGIT_PATTERN = ".*\\d.*";
@@ -70,20 +71,19 @@ public class GeneratorUtil {
 
     public static String createType(Map<String, ModuleMemberDeclarationNode> nodes, String name, Schema schema, Object type){
         if (type == Long.class) {
-            return createInteger(nodes, name, schema.minimum(),schema.exclusiveMinimum(), schema.maximum(), schema.exclusiveMaximum(), schema.multipleOf());
+            return createInteger(nodes, name, schema.getMinimum(),schema.getExclusiveMinimum(), schema.getMaximum(), schema.getExclusiveMaximum(), schema.getMultipleOf());
         } else if (type == Double.class) {
-            return createNumber(nodes, name, schema.minimum(), schema.exclusiveMinimum(), schema.maximum(), schema.exclusiveMaximum(), schema.multipleOf());
+            return createNumber(nodes, name, schema.getMinimum(), schema.getExclusiveMinimum(), schema.getMaximum(), schema.getExclusiveMaximum(), schema.getMultipleOf());
         } else if (type == String.class) {
-            return createString(nodes, name, schema.format(), schema.minLength(), schema.maxLength(), schema.pattern());
+            return createString(nodes, name, schema.getFormat(), schema.getMinLength(), schema.getMaxLength(), schema.getPattern());
         } else if (type == Boolean.class) {
             return BOOLEAN;
         } else if (type == null) {
             return NULL;
         } else if (type == ArrayList.class) {
-            return createArray(nodes, name, schema.prefixItems(), schema.items(), schema.contains(), schema.minItems(), schema.maxItems(), schema.uniqueItems(), schema.maxContains(), schema.minContains());
+            return createArray(nodes, name, schema.getPrefixItems(), schema.getItems(), schema.getContains(), schema.getMinItems(), schema.getMaxItems(), schema.getUniqueItems(), schema.getMaxContains(), schema.getMinContains(), schema.getUnevaluatedItems());
         } else {
-            return UNIVERSAL_OBJECT;
-//            return createObject(nodes, name);
+            return createObject(nodes, name, schema.getAdditionalProperties(), schema.getProperties(), schema.getPatternProperties(), schema.getDependentSchema(), schema.getPropertyNames(), schema.getUnevaluatedProperties(), schema.getMaxProperties(), schema.getMinProperties(), schema.getDependentRequired());
         }
     }
 
@@ -174,10 +174,10 @@ public class GeneratorUtil {
             annotation.append(FORMAT).append(COLON).append(format).append(COMMA);
         }
         if (minLength!=null) {
-            annotation.append(MIN_LENGTH).append(COLON).append(minLength.toString()).append(COMMA);
+            annotation.append(MIN_LENGTH).append(COLON).append(minLength).append(COMMA);
         }
         if (maxLength!=null) {
-            annotation.append(MAX_LENGTH).append(COLON).append(maxLength.toString()).append(COMMA);
+            annotation.append(MAX_LENGTH).append(COLON).append(maxLength).append(COMMA);
         }
         if (pattern!=null) {
             annotation.append(PATTERN).append(COLON).append(REGEX_PREFIX).append(BACK_TICK).append(pattern).append(BACK_TICK).append(COMMA);
@@ -192,10 +192,11 @@ public class GeneratorUtil {
         return finalName;
     }
 
-    public static String createArray(Map<String, ModuleMemberDeclarationNode> nodes, String name, List<Object> prefixItems, Object items, Object contains, Long minItems, Long maxItems, Boolean uniqueItems, Long maxContains, Long minContains) {
+    public static String createArray(Map<String, ModuleMemberDeclarationNode> nodes, String name, List<Object> prefixItems, Object items, Object contains, Long minItems, Long maxItems, Boolean uniqueItems, Long maxContains, Long minContains, Object unevaluatedItems) {
         ArrayList<String> arrayItems = new ArrayList<>();
 
         name = resolveNameConflicts(convertToPascalCase(name), nodes);
+        nodes.put(name, NodeParser.parseModuleMemberDeclaration("")); // To avoid conflicts with the sub-schema name allocation.
 
         if (prefixItems != null) {
             for (int i = 0; i < prefixItems.size(); i++) {
@@ -221,7 +222,7 @@ public class GeneratorUtil {
 
         ArrayList<String> tupleList = new ArrayList<>();
         for (int i = 1; i<arrayItems.size()+1; i++) {
-            if (i >= min && i <= max) { //! check if this is exclusive or not
+            if (i >= min && i <= max) {
                 tupleList.add(OPEN_SQUARE_BRACKET + String.join(COMMA, arrayItems.subList(0, i)) + CLOSE_SQUARE_BRACKET);
             }
         }
@@ -243,20 +244,50 @@ public class GeneratorUtil {
             annotation.append(UNIQUE_ITEMS).append(COLON).append(uniqueItems.toString()).append(COMMA);
         }
         if (contains != null) {
+            String containsRecordName = resolveNameConflicts(name + convertToPascalCase(CONTAINS), nodes);
+            String newType = Generator.convert(contains, containsRecordName, nodes);
+
+            if(newType.contains(PIPE)) {
+                String typeDef = TYPE + WHITESPACE + containsRecordName + WHITESPACE + newType + SEMI_COLON;
+                newType = containsRecordName;
+                ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(typeDef);
+                nodes.put(containsRecordName, moduleNode);
+            }
+
             annotation.append(CONTAINS).append(COLON).append(OPEN_BRACES);
-            annotation.append(CONTAINS).append(COLON).append(Generator.convert(contains, resolveNameConflicts(name + convertToPascalCase(CONTAINS),nodes), nodes)).append(COMMA);
+            annotation.append(CONTAINS).append(COLON).append(newType).append(COMMA);
 
             if (minContains == null) {
                 annotation.append(MIN_CONTAINS).append(COLON).append(ZERO).append(COMMA);
             } else {
-                annotation.append(MIN_CONTAINS).append(COLON).append(minContains.toString()).append(COMMA);
+                annotation.append(MIN_CONTAINS).append(COLON).append(minContains).append(COMMA);
             }
 
             if (maxContains!= null) {
-                annotation.append(MAX_CONTAINS).append(COLON).append(maxContains.toString()).append(COMMA);
+                annotation.append(MAX_CONTAINS).append(COLON).append(maxContains).append(COMMA);
             }
 
             annotation.deleteCharAt(annotation.length() - 1).append(CLOSE_BRACES).append(COMMA);
+        }
+
+        if (unevaluatedItems!= null) { //TODO: Test this
+            String UnevaluatedRecord;
+            if (unevaluatedItems instanceof Boolean) {
+                UnevaluatedRecord = (Boolean) unevaluatedItems ? JSON : NEVER;
+            } else {
+                String unevaluatedItemsRecordName = resolveNameConflicts(name + "UnevaluatedRecord", nodes);
+                nodes.put(unevaluatedItemsRecordName, NodeParser.parseModuleMemberDeclaration("")); // To avoid future name allocation
+
+                UnevaluatedRecord = Generator.convert(unevaluatedItems, unevaluatedItemsRecordName, nodes);
+
+                if(UnevaluatedRecord.contains(PIPE)) {
+                    String typeDef = TYPE + WHITESPACE + unevaluatedItemsRecordName + WHITESPACE + UnevaluatedRecord + SEMI_COLON;
+                    UnevaluatedRecord = unevaluatedItemsRecordName;
+                    ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(typeDef);
+                    nodes.put(unevaluatedItemsRecordName, moduleNode);
+                }
+            }
+            annotation.append(UNEVALUATED_ITEMS).append(COLON).append(UnevaluatedRecord).append(COMMA);
         }
 
         annotation.deleteCharAt(annotation.length()-1).append(CLOSE_BRACES).append(NEW_LINE);
@@ -268,7 +299,13 @@ public class GeneratorUtil {
         return name;
     }
 
-    public static String createObject(Map<String, ModuleMemberDeclarationNode> nodes, String name){
+    public static String createObject(Map<String, ModuleMemberDeclarationNode> nodes, String name, Object additionalProperties, Map<String, Object> properties, Map<String, Object> patternProperties, Map<String, Object> dependentSchema,Object propertyNames,Object unevaluatedProperties,Long maxProperties,Long minProperties,Map<String, Object> dependentRequired){
+        name = resolveNameConflicts(convertToPascalCase(name), nodes);
+        nodes.put(name, NodeParser.parseModuleMemberDeclaration(""));
+
+        if (patternProperties == null) {
+
+        }
         return "HELLO";
     }
 

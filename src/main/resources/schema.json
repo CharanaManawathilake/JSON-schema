@@ -1,15 +1,13 @@
 {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "array",
   "prefixItems": [
-    {
-      "type": "string"
-    },
-    {
-      "type": "integer"
-    }
+    { "type": "string" },
+    { "type": "integer" }
   ],
-  "items": {
-    "type": "boolean"
-  },
-  "minItems" : 2
+  "items": { "type": "boolean" },
+  "contains": { "type": "boolean" },
+  "minContains": 2,
+  "maxContains": 4,
+  "unevaluatedItems": { "type": ["null", "number"] }
 }

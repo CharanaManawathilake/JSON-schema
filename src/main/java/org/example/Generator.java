@@ -90,7 +90,7 @@ public class Generator {
         }
         Schema schema = (Schema) schemaObject;
 
-        ArrayList<Object> schemaType = getCommonType(schema.enumKeyword(), schema.constKeyword(), schema.type());
+        ArrayList<Object> schemaType = getCommonType(schema.getEnumKeyword(), schema.getConstKeyword(), schema.getType());
         // This can be a type or a value.
         if (schemaType.isEmpty()) {
             return GeneratorUtil.NEVER;

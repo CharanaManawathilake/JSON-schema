@@ -49,7 +49,7 @@ public class Main {
             // convert() returns the type created (if created), so the usage should be handled here.
             // Here it should be implemented if the type is "int"
             // It should not be implemented if the type is "Schema"
-            if ( typeName != "Schema"){
+            if ( !typeName.equals("Schema")){
                 String schemaDefinition = TYPE + WHITESPACE+ "Schema" + WHITESPACE + typeName + SEMI_COLON;
                 ModuleMemberDeclarationNode schemaNode = NodeParser.parseModuleMemberDeclaration(schemaDefinition);
                 nodes.put("Schema", schemaNode);
