@@ -44,15 +44,15 @@ public class Main {
 
             Map<String, ModuleMemberDeclarationNode> nodes = new LinkedHashMap<>();
 
-            String typeName = convert(schema, "Schema", nodes);
+            String typeName = convert(schema, DEFAULT_SCHEMA_NAME, nodes);
             // This is just the name, it is either "int" or "Schema"
             // convert() returns the type created (if created), so the usage should be handled here.
             // Here it should be implemented if the type is "int"
             // It should not be implemented if the type is "Schema"
-            if ( !typeName.equals("Schema")){
-                String schemaDefinition = TYPE + WHITESPACE+ "Schema" + WHITESPACE + typeName + SEMI_COLON;
+            if ( !typeName.equals(DEFAULT_SCHEMA_NAME)){
+                String schemaDefinition = TYPE + WHITESPACE+ DEFAULT_SCHEMA_NAME + WHITESPACE + typeName + SEMI_COLON;
                 ModuleMemberDeclarationNode schemaNode = NodeParser.parseModuleMemberDeclaration(schemaDefinition);
-                nodes.put("Schema", schemaNode);
+                nodes.put(DEFAULT_SCHEMA_NAME, schemaNode);
             }
             System.out.println("Hello, World!");
 

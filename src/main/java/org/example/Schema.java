@@ -56,6 +56,7 @@ class ListSchemaDeserializer implements JsonDeserializer<List<Object>> {
         }
 }
 
+//TODO: Handle the presence of two "name" properties in objects.
 class MapStringSchemaDeserializer implements JsonDeserializer<Map<String, Object>> {
         @Override
         public Map<String, Object> deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {

@@ -5,6 +5,7 @@ import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
 import io.ballerina.compiler.syntax.tree.NodeParser;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -13,6 +14,8 @@ public class GeneratorUtil {
     public static final String TYPE = "type";
     public static final String WHITESPACE = " ";
     public static final String AT = "@";
+    public static final String OPEN_BRACKET = "(";
+    public static final String CLOSE_BRACKET = ")";
     public static final String OPEN_BRACES = "{";
     public static final String CLOSE_BRACES = "}";
     public static final String COLON = ":";
@@ -26,6 +29,9 @@ public class GeneratorUtil {
     public static final String OPEN_SQUARE_BRACKET = "[";
     public static final String CLOSE_SQUARE_BRACKET = "]";
     public static final String ZERO = "0";
+    public static final String RECORD = "record";
+    public static final String QUESTION_MARK = "?";
+    public static final String EQUAL = "=";
 
     public static final String INTEGER = "int";
     public static final String STRING = "string";
@@ -38,6 +44,7 @@ public class GeneratorUtil {
     public static final String JSON = "json";
     public static final String UNIVERSAL_ARRAY = "json[]";
     public static final String UNIVERSAL_OBJECT = "record{}";
+    public static final String DEFAULT_SCHEMA_NAME = "Schema";
 
     public static final String ANNOTATION_MODULE = "jsondata";
     public static final String NUMBER_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "NumberValidation";
@@ -83,7 +90,7 @@ public class GeneratorUtil {
         } else if (type == ArrayList.class) {
             return createArray(nodes, name, schema.getPrefixItems(), schema.getItems(), schema.getContains(), schema.getMinItems(), schema.getMaxItems(), schema.getUniqueItems(), schema.getMaxContains(), schema.getMinContains(), schema.getUnevaluatedItems());
         } else {
-            return createObject(nodes, name, schema.getAdditionalProperties(), schema.getProperties(), schema.getPatternProperties(), schema.getDependentSchema(), schema.getPropertyNames(), schema.getUnevaluatedProperties(), schema.getMaxProperties(), schema.getMinProperties(), schema.getDependentRequired());
+            return createObject(nodes, name, schema.getAdditionalProperties(), schema.getProperties(), schema.getPatternProperties(), schema.getDependentSchema(), schema.getPropertyNames(), schema.getUnevaluatedProperties(), schema.getMaxProperties(), schema.getMinProperties(), schema.getDependentRequired(), schema.getRequired());
         }
     }
 
@@ -98,19 +105,19 @@ public class GeneratorUtil {
         annotation.append(NUMBER_ANNOTATION).append(OPEN_BRACES);
 
         if (minimum!=null) {
-            annotation.append(MINIMUM).append(COLON).append(minimum.toString()).append(COMMA);
+            annotation.append(MINIMUM).append(COLON).append(minimum).append(COMMA);
         }
         if (exclusiveMinimum!=null){
-            annotation.append(EXCLUSIVE_MINIMUM).append(COLON).append(exclusiveMinimum.toString()).append(COMMA);
+            annotation.append(EXCLUSIVE_MINIMUM).append(COLON).append(exclusiveMinimum).append(COMMA);
         }
         if (maximum!=null) {
-            annotation.append(MAXIMUM).append(COLON).append(maximum.toString()).append(COMMA);
+            annotation.append(MAXIMUM).append(COLON).append(maximum).append(COMMA);
         }
         if (exclusiveMaximum!=null) {
-            annotation.append(EXCLUSIVE_MAXIMUM).append(COLON).append(exclusiveMaximum.toString()).append(COMMA);
+            annotation.append(EXCLUSIVE_MAXIMUM).append(COLON).append(exclusiveMaximum).append(COMMA);
         }
         if (multipleOf!=null){
-            annotation.append(MULTIPLE_OF).append(COLON).append(multipleOf.toString()).append(COMMA);
+            annotation.append(MULTIPLE_OF).append(COLON).append(multipleOf).append(COMMA);
         }
 
         annotation.deleteCharAt(annotation.length() - 1).append(CLOSE_BRACES).append(NEW_LINE);
@@ -133,19 +140,19 @@ public class GeneratorUtil {
         annotation.append(NUMBER_ANNOTATION).append(OPEN_BRACES);
 
         if (minimum!=null) {
-            annotation.append(MINIMUM).append(COLON).append(minimum.toString()).append(COMMA);
+            annotation.append(MINIMUM).append(COLON).append(minimum).append(COMMA);
         }
         if (exclusiveMinimum!=null){
-            annotation.append(EXCLUSIVE_MINIMUM).append(COLON).append(exclusiveMinimum.toString()).append(COMMA);
+            annotation.append(EXCLUSIVE_MINIMUM).append(COLON).append(exclusiveMinimum).append(COMMA);
         }
         if (maximum!=null) {
-            annotation.append(MAXIMUM).append(COLON).append(maximum.toString()).append(COMMA);
+            annotation.append(MAXIMUM).append(COLON).append(maximum).append(COMMA);
         }
         if (exclusiveMaximum!=null) {
-            annotation.append(EXCLUSIVE_MAXIMUM).append(COLON).append(exclusiveMaximum.toString()).append(COMMA);
+            annotation.append(EXCLUSIVE_MAXIMUM).append(COLON).append(exclusiveMaximum).append(COMMA);
         }
         if (multipleOf!=null){
-            annotation.append(MULTIPLE_OF).append(COLON).append(multipleOf.toString()).append(COMMA);
+            annotation.append(MULTIPLE_OF).append(COLON).append(multipleOf).append(COMMA);
         }
 
         annotation.deleteCharAt(annotation.length() - 1).append(CLOSE_BRACES).append(NEW_LINE);
@@ -208,7 +215,7 @@ public class GeneratorUtil {
         if (items != null ) {
             String itemsType = Generator.convert(items, name + "RestItem", nodes); //
             if (itemsType.contains("|")){
-                itemsType = OPEN_BRACES + itemsType + CLOSE_BRACES + REST;
+                itemsType = OPEN_BRACKET + itemsType + CLOSE_BRACKET + REST;
                 arrayItems.add(itemsType);
             } else {
                 arrayItems.add(itemsType + REST);
@@ -235,13 +242,13 @@ public class GeneratorUtil {
         annotation.append(ARRAY_ANNOTATION).append(OPEN_BRACES);
 
         if (minItems != null) {
-            annotation.append(MIN_ITEMS).append(COLON).append(minItems.toString()).append(COMMA);
+            annotation.append(MIN_ITEMS).append(COLON).append(minItems).append(COMMA);
         }
         if (maxItems != null) {
-            annotation.append(MAX_ITEMS).append(COLON).append(maxItems.toString()).append(COMMA);
+            annotation.append(MAX_ITEMS).append(COLON).append(maxItems).append(COMMA);
         }
         if (uniqueItems != null) {
-            annotation.append(UNIQUE_ITEMS).append(COLON).append(uniqueItems.toString()).append(COMMA);
+            annotation.append(UNIQUE_ITEMS).append(COLON).append(uniqueItems).append(COMMA);
         }
         if (contains != null) {
             String containsRecordName = resolveNameConflicts(name + convertToPascalCase(CONTAINS), nodes);
@@ -299,14 +306,47 @@ public class GeneratorUtil {
         return name;
     }
 
-    public static String createObject(Map<String, ModuleMemberDeclarationNode> nodes, String name, Object additionalProperties, Map<String, Object> properties, Map<String, Object> patternProperties, Map<String, Object> dependentSchema,Object propertyNames,Object unevaluatedProperties,Long maxProperties,Long minProperties,Map<String, Object> dependentRequired){
+    public static String createObject(Map<String, ModuleMemberDeclarationNode> nodes, String name, Object additionalProperties, Map<String, Object> properties, Map<String, Object> patternProperties, Map<String, Object> dependentSchema, Object propertyNames, Object unevaluatedProperties, Long maxProperties, Long minProperties, Map<String, Object> dependentRequired, List<String> required) {
         name = resolveNameConflicts(convertToPascalCase(name), nodes);
         nodes.put(name, NodeParser.parseModuleMemberDeclaration(""));
 
-        if (patternProperties == null) {
-
+        Map<String, String> recordFields = new HashMap<>();
+        if (properties != null) {
+            properties.forEach((key, value) -> {
+                String fieldName = resolveNameConflicts(key, nodes);
+                recordFields.put(fieldName, Generator.convert(value, fieldName, nodes));
+            });
         }
-        return "HELLO";
+
+        String additionalPropName = Generator.convert((additionalProperties == null) ? true : additionalProperties, resolveNameConflicts(name + "AdditionalProperties", nodes), nodes);
+
+        StringBuilder record = new StringBuilder();
+        record.append(TYPE).append(WHITESPACE).append(name).append(WHITESPACE).append(RECORD).append(OPEN_BRACES).append(PIPE);
+
+        recordFields.forEach((key, value) -> {
+            record.append(value).append(WHITESPACE).append(key);
+            // TODO: Test this small part.
+            if (required != null && required.contains(key) && properties != null && (properties.get(key) instanceof Schema) && ((Schema) properties.get(key)).getDefaultKeyword() != null) {
+                record.append(EQUAL).append(((Schema) properties.get(key)).getDefaultKeyword().toString());
+            } else {
+                record.append(QUESTION_MARK);
+            }
+            record.append(SEMI_COLON);
+        });
+        if (!additionalPropName.equals(NEVER)) {
+            if (additionalPropName.contains(PIPE)) {
+                record.append(OPEN_BRACKET + additionalPropName + CLOSE_BRACKET + REST + SEMI_COLON);
+            } else {
+                record.append(additionalPropName + REST + SEMI_COLON);
+            }
+        }
+
+        record.append(PIPE).append(CLOSE_BRACES).append(SEMI_COLON);
+
+        ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(record.toString());
+        nodes.put(name, moduleNode);
+
+        return name;
     }
 
     public static boolean isValidFormat(String format) {

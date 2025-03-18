@@ -1,13 +1,20 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "type": "array",
-  "prefixItems": [
-    { "type": "string" },
-    { "type": "integer" }
-  ],
-  "items": { "type": "boolean" },
-  "contains": { "type": "boolean" },
-  "minContains": 2,
-  "maxContains": 4,
-  "unevaluatedItems": { "type": ["null", "number"] }
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "age": {
+      "type": "integer",
+      "minimum": 0,
+      "default" : 18
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    }
+  },
+  "additionalProperties" : {
+    "type"
+  :  ["integer","string"]}
 }
