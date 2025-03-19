@@ -1,20 +1,33 @@
 {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "User Profile",
   "type": "object",
   "properties": {
-    "name": {
+    "username": {
       "type": "string"
-    },
-    "age": {
-      "type": "integer",
-      "minimum": 0,
-      "default" : 18
     },
     "email": {
       "type": "string",
       "format": "email"
+    },
+    "phone": {
+      "type": "string",
+      "pattern": "^[0-9]{10}$"
+    },
+    "alternate_email": {
+      "type": "string",
+      "format": "email"
+    },
+    "address": {
+      "type": "string"
+    },
+    "zipcode": {
+      "type": "string"
     }
   },
-  "additionalProperties" : {
-    "type"
-  :  ["integer","string"]}
+  "required": ["username"],
+  "dependentRequired": {
+    "email": ["phone", "alternate_email"],
+    "address": ["zipcode"]
+  }
 }

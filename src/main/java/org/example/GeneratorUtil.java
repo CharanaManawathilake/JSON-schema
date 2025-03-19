@@ -4,10 +4,7 @@ import com.google.gson.internal.LinkedTreeMap;
 import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
 import io.ballerina.compiler.syntax.tree.NodeParser;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class GeneratorUtil {
     public static final String PUBLIC = "public";
@@ -32,6 +29,8 @@ public class GeneratorUtil {
     public static final String RECORD = "record";
     public static final String QUESTION_MARK = "?";
     public static final String EQUAL = "=";
+    public static final String DOUBLE_QUOTATION = "\"";
+    public static final String VALUE = "value";
 
     public static final String INTEGER = "int";
     public static final String STRING = "string";
@@ -45,12 +44,16 @@ public class GeneratorUtil {
     public static final String UNIVERSAL_ARRAY = "json[]";
     public static final String UNIVERSAL_OBJECT = "record{}";
     public static final String DEFAULT_SCHEMA_NAME = "Schema";
+    public static final String DEPENDENT_SCHEMA = "dependentSchema";
+    public static final String DEPENDENT_REQUIRED = "dependentRequired";
 
     public static final String ANNOTATION_MODULE = "jsondata";
     public static final String NUMBER_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "NumberValidation";
     public static final String STRING_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "StringValidation";
     public static final String ARRAY_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "ArrayValidation";
     public static final String OBJECT_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "ObjectValidation";
+    public static final String DEPENDENT_SCHEMA_ANNOTATION = AT + ANNOTATION_MODULE + COLON + DEPENDENT_SCHEMA;
+    public static final String DEPENDENT_REQUIRED_ANNOTATION = AT + ANNOTATION_MODULE + COLON + DEPENDENT_REQUIRED;
 
     public static final String MINIMUM = "minimum";
     public static final String EXCLUSIVE_MINIMUM = "exclusiveMinimum";
@@ -235,6 +238,7 @@ public class GeneratorUtil {
         }
 
         if ((minItems == null) && (maxItems == null) && (uniqueItems == null) && (contains == null)) {
+            nodes.remove(name);
             return String.join(PIPE, tupleList);
         }
 
@@ -306,7 +310,7 @@ public class GeneratorUtil {
         return name;
     }
 
-    public static String createObject(Map<String, ModuleMemberDeclarationNode> nodes, String name, Object additionalProperties, Map<String, Object> properties, Map<String, Object> patternProperties, Map<String, Object> dependentSchema, Object propertyNames, Object unevaluatedProperties, Long maxProperties, Long minProperties, Map<String, Object> dependentRequired, List<String> required) {
+    public static String createObject(Map<String, ModuleMemberDeclarationNode> nodes, String name, Object additionalProperties, Map<String, Object> properties, Map<String, Object> patternProperties, Map<String, Object> dependentSchema, Object propertyNames, Object unevaluatedProperties, Long maxProperties, Long minProperties, Map<String, List<String>> dependentRequired, List<String> required) {
         name = resolveNameConflicts(convertToPascalCase(name), nodes);
         nodes.put(name, NodeParser.parseModuleMemberDeclaration(""));
 
@@ -318,21 +322,57 @@ public class GeneratorUtil {
             });
         }
 
-        String additionalPropName = Generator.convert((additionalProperties == null) ? true : additionalProperties, resolveNameConflicts(name + "AdditionalProperties", nodes), nodes);
+        String additionalPropName;
+        //TODO: need to make changes to address patternProperties.
+        if (additionalProperties == null && unevaluatedProperties == null) {
+            additionalPropName = JSON;
+        } else
+            additionalPropName = Generator.convert(Objects.requireNonNullElse(additionalProperties, unevaluatedProperties), resolveNameConflicts(name + "AdditionalProperties", nodes), nodes);
 
         StringBuilder record = new StringBuilder();
         record.append(TYPE).append(WHITESPACE).append(name).append(WHITESPACE).append(RECORD).append(OPEN_BRACES).append(PIPE);
 
         recordFields.forEach((key, value) -> {
+            //DependentRequired
+            if (dependentRequired != null && dependentRequired.containsKey(key) && !dependentRequired.get(key).isEmpty()) {
+                record.append(DEPENDENT_REQUIRED_ANNOTATION).append(OPEN_BRACES);
+                record.append(VALUE).append(COLON).append(OPEN_SQUARE_BRACKET).append(DOUBLE_QUOTATION);
+                record.append(String.join(DOUBLE_QUOTATION + COMMA + DOUBLE_QUOTATION, dependentRequired.get(key)));
+                record.append(DOUBLE_QUOTATION).append(CLOSE_SQUARE_BRACKET).append(CLOSE_BRACES);
+            }
+            //DependentSchema
+            if (dependentSchema != null && dependentSchema.containsKey(key)) {
+                record.append(DEPENDENT_REQUIRED_ANNOTATION).append(OPEN_BRACES);
+                record.append(VALUE).append(COLON);
+
+                String dependentSchemaType = Generator.convert(dependentSchema.get(key), resolveNameConflicts(key + "DependentSchema", nodes),nodes);
+                if (dependentSchemaType.contains(PIPE)){
+                    dependentSchemaType = OPEN_BRACKET + dependentSchemaType + CLOSE_BRACKET;
+                }
+
+                record.append(dependentSchemaType).append(CLOSE_BRACES);
+            }
             record.append(value).append(WHITESPACE).append(key);
-            // TODO: Test this small part.
+            // TODO: Test this small part. This isn't working with strings inside arrays and objects.
+            // ! This implementation is incorrect for certain data types, NOT TESTED for all data types.
             if (required != null && required.contains(key) && properties != null && (properties.get(key) instanceof Schema) && ((Schema) properties.get(key)).getDefaultKeyword() != null) {
-                record.append(EQUAL).append(((Schema) properties.get(key)).getDefaultKeyword().toString());
-            } else {
+                Object defaultValue = ((Schema) properties.get(key)).getDefaultKeyword();
+
+                if (defaultValue instanceof String) {
+                    record.append(EQUAL).append(DOUBLE_QUOTATION).append(defaultValue).append(DOUBLE_QUOTATION);
+                } else if (defaultValue instanceof Long || defaultValue instanceof Boolean) {
+                    record.append(EQUAL).append(defaultValue);
+                } else if (defaultValue instanceof Object[]) {
+                    record.append(EQUAL).append(Arrays.deepToString((Object[]) defaultValue));
+                } else {
+                    record.append(EQUAL).append(String.valueOf(defaultValue));
+                }
+            } else if (required == null || !required.contains(key)) {
                 record.append(QUESTION_MARK);
             }
             record.append(SEMI_COLON);
         });
+
         if (!additionalPropName.equals(NEVER)) {
             if (additionalPropName.contains(PIPE)) {
                 record.append(OPEN_BRACKET + additionalPropName + CLOSE_BRACKET + REST + SEMI_COLON);

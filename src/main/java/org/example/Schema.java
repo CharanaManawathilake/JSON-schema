@@ -153,7 +153,6 @@ public class Schema {
         private String description;
 
         @SerializedName("default")
-        @JsonAdapter(SchemaDeserializer.class)
         private Object defaultKeyword;
 
         private Boolean deprecated;
@@ -203,8 +202,7 @@ public class Schema {
 
         private List<String> required;
 
-        @JsonAdapter(MapStringSchemaDeserializer.class)
-        private Map<String, Object> dependentRequired;
+        private Map<String, List<String>> dependentRequired;
 
         // Constructors
         public Schema(
@@ -264,7 +262,7 @@ public class Schema {
                 Long maxProperties,
                 Long minProperties,
                 List<String> required,
-                Map<String, Object> dependentRequired
+                Map<String, List<String>> dependentRequired
         ) {
                 this.prefixItems = prefixItems;
                 this.items = items;
@@ -775,11 +773,11 @@ public class Schema {
                 this.required = required;
         }
 
-        public Map<String, Object> getDependentRequired() {
+        public Map<String, List<String>> getDependentRequired() {
                 return dependentRequired;
         }
 
-        public void setDependentRequired(Map<String, Object> dependentRequired) {
+        public void setDependentRequired(Map<String, List<String>> dependentRequired) {
                 this.dependentRequired = dependentRequired;
         }
 }
