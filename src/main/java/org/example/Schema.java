@@ -23,6 +23,22 @@ class TypeDeserializer implements JsonDeserializer<ArrayList<String>> {
         }
 }
 
+class PropertyNameDeserializer implements JsonDeserializer<Object>{
+        @Override
+        public Object deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
+                if (jsonElement.isJsonPrimitive() && jsonElement.getAsJsonPrimitive().isBoolean()) {
+                        return jsonElement.getAsBoolean();
+                }
+                if (jsonElement.isJsonObject()) {
+                        JsonObject jsonObject = jsonElement.getAsJsonObject();
+                        jsonObject.addProperty("type" , "string");
+                        return jsonDeserializationContext.deserialize(jsonObject, Schema.class);
+                } else {
+                        throw new JsonParseException("Expected a boolean or an object");
+                }
+        }
+}
+
 class SchemaDeserializer implements JsonDeserializer<Object> {
         @Override
         public Object deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
@@ -99,7 +115,7 @@ public class Schema {
         @JsonAdapter(MapStringSchemaDeserializer.class)
         private Map<String, Object> dependentSchema;
 
-        @JsonAdapter(SchemaDeserializer.class)
+        @JsonAdapter(PropertyNameDeserializer.class)
         private Object propertyNames;
 
         @JsonAdapter(SchemaDeserializer.class)

@@ -74,6 +74,10 @@ public class GeneratorUtil {
     public static final String MAX_CONTAINS = "maxContains";
     public static final String UNEVALUATED_ITEMS = "unevaluatedItems";
 
+    public static final String MAX_PROPERTIES = "maxProperties";
+    public static final String MIN_PROPERTIES = "minProperties";
+    public static final String PROPERTY_NAMES = "propertyNames";
+
     private static final String INVALID_CHARS_PATTERN = ".*[!@$%^&*()_\\-|/\\\\\\s\\d].*";
     private static final String DIGIT_PATTERN = ".*\\d.*";
     private static final String STARTS_WITH_DIGIT_PATTERN = "^\\d.*";
@@ -168,7 +172,7 @@ public class GeneratorUtil {
     }
 
     public static String createString(Map<String, ModuleMemberDeclarationNode> nodes, String name, String format, Long minLength, Long maxLength, String pattern){
-        if (format == null && minLength == null && maxLength == null){
+        if (format == null && minLength == null && maxLength == null && pattern == null){
             return STRING;
         }
 
@@ -311,6 +315,10 @@ public class GeneratorUtil {
     }
 
     public static String createObject(Map<String, ModuleMemberDeclarationNode> nodes, String name, Object additionalProperties, Map<String, Object> properties, Map<String, Object> patternProperties, Map<String, Object> dependentSchema, Object propertyNames, Object unevaluatedProperties, Long maxProperties, Long minProperties, Map<String, List<String>> dependentRequired, List<String> required) {
+        if (propertyNames instanceof Boolean && !((Boolean) propertyNames)){
+            return NEVER;
+        }
+
         name = resolveNameConflicts(convertToPascalCase(name), nodes);
         nodes.put(name, NodeParser.parseModuleMemberDeclaration(""));
 
@@ -318,7 +326,7 @@ public class GeneratorUtil {
         if (properties != null) {
             properties.forEach((key, value) -> {
                 String fieldName = resolveNameConflicts(key, nodes);
-                recordFields.put(fieldName, Generator.convert(value, fieldName, nodes));
+                recordFields.put(key, Generator.convert(value, fieldName, nodes));
             });
         }
 
@@ -326,8 +334,47 @@ public class GeneratorUtil {
         //TODO: need to make changes to address patternProperties.
         if (additionalProperties == null && unevaluatedProperties == null) {
             additionalPropName = JSON;
-        } else
+        } else {
             additionalPropName = Generator.convert(Objects.requireNonNullElse(additionalProperties, unevaluatedProperties), resolveNameConflicts(name + "AdditionalProperties", nodes), nodes);
+            // additionalPropName checks the keywords properties and pattern properties only.
+            // Should return never if other conditions are not adhered.
+            if (additionalPropName.equals(NEVER)) {
+                try {
+                    required.forEach((key) -> {
+                        if (!recordFields.containsKey(key)) {
+                            throw new IllegalStateException("Returning NEVER");
+                        }
+                    });
+                } catch (IllegalStateException e) {
+                    return NEVER;
+                }
+            }
+        }
+
+        // Add field names that are present in the required array and are not present in the properties field.
+        if (required != null) {
+            required.forEach((key) -> {
+                if (!recordFields.containsKey(key)) {
+                    recordFields.put(key, additionalPropName);
+                }
+            });
+        }
+        // Add undefined keys values present in dependentSchema.
+        if (dependentSchema != null) {
+            dependentSchema.forEach((key, value) -> {
+                if (!recordFields.containsKey(key)) {
+                    recordFields.put(key, additionalPropName);
+                }
+            });
+        }
+        // Add undefined key values present in dependentRequired.
+        if (dependentRequired != null) {
+            dependentRequired.forEach((key, value) -> {
+                if (!recordFields.containsKey(key)) {
+                    recordFields.put(key, additionalPropName);
+                }
+            });
+        }
 
         StringBuilder record = new StringBuilder();
         record.append(TYPE).append(WHITESPACE).append(name).append(WHITESPACE).append(RECORD).append(OPEN_BRACES).append(PIPE);
@@ -342,7 +389,7 @@ public class GeneratorUtil {
             }
             //DependentSchema
             if (dependentSchema != null && dependentSchema.containsKey(key)) {
-                record.append(DEPENDENT_REQUIRED_ANNOTATION).append(OPEN_BRACES);
+                record.append(DEPENDENT_SCHEMA_ANNOTATION).append(OPEN_BRACES);
                 record.append(VALUE).append(COLON);
 
                 String dependentSchemaType = Generator.convert(dependentSchema.get(key), resolveNameConflicts(key + "DependentSchema", nodes),nodes);
@@ -383,7 +430,35 @@ public class GeneratorUtil {
 
         record.append(PIPE).append(CLOSE_BRACES).append(SEMI_COLON);
 
-        ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(record.toString());
+
+        if (maxProperties == null && minProperties == null && (propertyNames == null || (propertyNames instanceof Boolean && (Boolean) propertyNames))) {
+            ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(record.toString());
+            nodes.put(name, moduleNode);
+
+            return name;
+        }
+
+        StringBuilder annotation = new StringBuilder();
+
+        annotation.append(OBJECT_ANNOTATION).append(OPEN_BRACES);
+
+        if (maxProperties != null) {
+            annotation.append(MAX_PROPERTIES).append(COLON).append(maxProperties).append(COMMA);
+        }
+        if (minProperties != null) {
+            annotation.append(MIN_PROPERTIES).append(COLON).append(minProperties).append(COMMA);
+        }
+        if (propertyNames != null) {
+            String dependentSchemaType = Generator.convert(propertyNames, resolveNameConflicts(name + "PropertyNames", nodes),nodes);
+            if (dependentSchemaType.contains(PIPE)){
+                dependentSchemaType = OPEN_BRACKET + dependentSchemaType + CLOSE_BRACKET;
+            }
+
+            annotation.append(PROPERTY_NAMES).append(COLON).append(dependentSchemaType).append(COMMA);
+        }
+
+        annotation.deleteCharAt(annotation.length() - 1).append(CLOSE_BRACES).append(NEW_LINE).append(record);
+        ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(annotation.toString());
         nodes.put(name, moduleNode);
 
         return name;
