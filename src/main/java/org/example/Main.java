@@ -10,14 +10,16 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 import static org.example.Generator.convert;
 import static org.example.GeneratorUtil.*;
 
 public class Main {
+    public static final List<String> SUPPORTED_DRAFTS = List.of(
+            "https://json-schema.org/draft/2020-12/schema"
+    );
+
     public static File getFileFromResources(String fileName) {
         ClassLoader classLoader = Main.class.getClassLoader();
         URL resource = Objects.requireNonNull(classLoader.getResource(fileName));
@@ -33,14 +35,21 @@ public class Main {
             String jsonContent = new String(Files.readAllBytes(jsonSchema.toPath()));
 
             Object schema;
-            //! Handle this \n issue
-            if ("true\n".equals(jsonContent)) {
+            jsonContent = jsonContent.trim();  // Removes leading/trailing spaces & newlines
+
+            if ("true".equals(jsonContent)) {
                 schema = true;
-            } else if ("false\n".equals(jsonContent)) {
+            } else if ("false".equals(jsonContent)) {
                 schema = false;
             } else {
                 schema = gson.fromJson(jsonContent, Schema.class);
+                SchemaIdCollector.schemaIdCollector((Schema) schema);
+
+                if (((Schema) schema).get$schema() != null && !SUPPORTED_DRAFTS.contains(((Schema) schema).get$schema())){
+                    throw new RuntimeException("Schema draft not supported");
+                }
             }
+
 
             Map<String, ModuleMemberDeclarationNode> nodes = new LinkedHashMap<>();
 
