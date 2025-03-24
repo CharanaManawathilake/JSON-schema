@@ -6,6 +6,10 @@ import io.ballerina.compiler.syntax.tree.NodeParser;
 
 import java.util.*;
 
+import static org.example.Generator.convert;
+import static org.example.SchemaDatabase.idToTypeMap;
+import static org.example.SchemaDatabase.schemaList;
+
 public class GeneratorUtil {
     public static final String PUBLIC = "public";
     public static final String TYPE = "type";
@@ -215,12 +219,12 @@ public class GeneratorUtil {
         if (prefixItems != null) {
             for (int i = 0; i < prefixItems.size(); i++) {
                 Object item = prefixItems.get(i);
-                arrayItems.add(Generator.convert(item, name + "Item" + i, nodes)); // Append index to the item name
+                arrayItems.add(convert(item, name + "Item" + i, nodes)); // Append index to the item name
             }
         }
 
         if (items != null ) {
-            String itemsType = Generator.convert(items, name + "RestItem", nodes); //
+            String itemsType = convert(items, name + "RestItem", nodes); //
             if (itemsType.contains("|")){
                 itemsType = OPEN_BRACKET + itemsType + CLOSE_BRACKET + REST;
                 arrayItems.add(itemsType);
@@ -260,7 +264,7 @@ public class GeneratorUtil {
         }
         if (contains != null) {
             String containsRecordName = resolveNameConflicts(name + convertToPascalCase(CONTAINS), nodes);
-            String newType = Generator.convert(contains, containsRecordName, nodes);
+            String newType = convert(contains, containsRecordName, nodes);
 
             if(newType.contains(PIPE)) {
                 String typeDef = TYPE + WHITESPACE + containsRecordName + WHITESPACE + newType + SEMI_COLON;
@@ -293,7 +297,7 @@ public class GeneratorUtil {
                 String unevaluatedItemsRecordName = resolveNameConflicts(name + "UnevaluatedRecord", nodes);
                 nodes.put(unevaluatedItemsRecordName, NodeParser.parseModuleMemberDeclaration("")); // To avoid future name allocation
 
-                UnevaluatedRecord = Generator.convert(unevaluatedItems, unevaluatedItemsRecordName, nodes);
+                UnevaluatedRecord = convert(unevaluatedItems, unevaluatedItemsRecordName, nodes);
 
                 if(UnevaluatedRecord.contains(PIPE)) {
                     String typeDef = TYPE + WHITESPACE + unevaluatedItemsRecordName + WHITESPACE + UnevaluatedRecord + SEMI_COLON;
@@ -326,7 +330,7 @@ public class GeneratorUtil {
         if (properties != null) {
             properties.forEach((key, value) -> {
                 String fieldName = resolveNameConflicts(key, nodes);
-                recordFields.put(key, Generator.convert(value, fieldName, nodes));
+                recordFields.put(key, convert(value, fieldName, nodes));
             });
         }
 
@@ -335,7 +339,7 @@ public class GeneratorUtil {
         if (additionalProperties == null && unevaluatedProperties == null) {
             additionalPropName = JSON;
         } else {
-            additionalPropName = Generator.convert(Objects.requireNonNullElse(additionalProperties, unevaluatedProperties), resolveNameConflicts(name + "AdditionalProperties", nodes), nodes);
+            additionalPropName = convert(Objects.requireNonNullElse(additionalProperties, unevaluatedProperties), resolveNameConflicts(name + "AdditionalProperties", nodes), nodes);
             // additionalPropName checks the keywords properties and pattern properties only.
             // Should return never if other conditions are not adhered.
             if (additionalPropName.equals(NEVER)) {
@@ -392,7 +396,7 @@ public class GeneratorUtil {
                 record.append(DEPENDENT_SCHEMA_ANNOTATION).append(OPEN_BRACES);
                 record.append(VALUE).append(COLON);
 
-                String dependentSchemaType = Generator.convert(dependentSchema.get(key), resolveNameConflicts(key + "DependentSchema", nodes),nodes);
+                String dependentSchemaType = convert(dependentSchema.get(key), resolveNameConflicts(key + "DependentSchema", nodes),nodes);
                 if (dependentSchemaType.contains(PIPE)){
                     dependentSchemaType = OPEN_BRACKET + dependentSchemaType + CLOSE_BRACKET;
                 }
@@ -449,7 +453,7 @@ public class GeneratorUtil {
             annotation.append(MIN_PROPERTIES).append(COLON).append(minProperties).append(COMMA);
         }
         if (propertyNames != null) {
-            String dependentSchemaType = Generator.convert(propertyNames, resolveNameConflicts(name + "PropertyNames", nodes),nodes);
+            String dependentSchemaType = convert(propertyNames, resolveNameConflicts(name + "PropertyNames", nodes),nodes);
             if (dependentSchemaType.contains(PIPE)){
                 dependentSchemaType = OPEN_BRACKET + dependentSchemaType + CLOSE_BRACKET;
             }

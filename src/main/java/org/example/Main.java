@@ -43,7 +43,8 @@ public class Main {
                 schema = false;
             } else {
                 schema = gson.fromJson(jsonContent, Schema.class);
-                SchemaIdCollector.schemaIdCollector((Schema) schema);
+                // A new HashMap is used to store the anchors.
+                SchemaIdCollector.schemaIdCollector((Schema) schema, ((Schema) schema).get$id(), ((Schema) schema).get$id(), new HashMap<>(), new HashMap<>());
 
                 if (((Schema) schema).get$schema() != null && !SUPPORTED_DRAFTS.contains(((Schema) schema).get$schema())){
                     throw new RuntimeException("Schema draft not supported");

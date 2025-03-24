@@ -220,6 +220,8 @@ public class Schema {
 
         private Map<String, List<String>> dependentRequired;
 
+        // TODO: Extra properties support.
+
         // Constructors
         public Schema(
                 List<Object> prefixItems,
