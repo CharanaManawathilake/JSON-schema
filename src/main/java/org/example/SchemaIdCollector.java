@@ -47,8 +47,20 @@ public class SchemaIdCollector {
             schemaIdCollector((Schema) schema.getContains(), $id + "/contains", idPrefix, anchors, dynamicAnchors);
         }
 
-        if (schema.getAdditionalProperties() != null && schema.getAdditionalProperties() instanceof Schema) {
+        if (schema.getAdditionalProperties() != null) {
+            if (schema.getAdditionalProperties() instanceof Schema) {
             schemaIdCollector((Schema) schema.getAdditionalProperties(), $id + "/additionalProperties", idPrefix, anchors, dynamicAnchors);
+            } else if ((Boolean) schema.getAdditionalProperties()) {
+                schema.setAdditionalProperties(null);
+            }
+        }
+
+        if (schema.getUnevaluatedProperties() != null) {
+            if (schema.getUnevaluatedProperties() instanceof Schema) {
+                schemaIdCollector((Schema) schema.getUnevaluatedProperties(), $id + "/unevaluatedProperties", idPrefix, anchors, dynamicAnchors);
+            } else if ((Boolean) schema.getAdditionalProperties()) {
+                schema.setUnevaluatedItems(null);
+            }
         }
 
         if (schema.getProperties() != null) {
@@ -103,10 +115,6 @@ public class SchemaIdCollector {
             schemaIdCollector((Schema) schema.getUnevaluatedItems(), $id + "/unevaluatedItems", idPrefix, anchors, dynamicAnchors);
         }
 
-        if (schema.getUnevaluatedProperties() != null && schema.getUnevaluatedProperties() instanceof Schema) {
-            schemaIdCollector((Schema) schema.getUnevaluatedProperties(), $id + "/unevaluatedProperties", idPrefix, anchors, dynamicAnchors);
-        }
-
         if (schema.get$ref() != null) {
             if (schema.get$ref().startsWith(String.valueOf("#/"))) {
                 schema.set$ref(idPrefix + schema.get$ref().substring(1));
@@ -138,5 +146,8 @@ public class SchemaIdCollector {
                 throw new RuntimeException("Dynamic anchor " + schema.get$dynamicRef() + " not found");
             }
         }
+
+        // Adding default values
+        // TODO: Complete this if needed.
     }
 }

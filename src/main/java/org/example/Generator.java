@@ -2,6 +2,7 @@ package org.example;
 
 import com.google.gson.internal.LinkedTreeMap;
 import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
+import io.ballerina.compiler.syntax.tree.NodeParser;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -133,17 +134,34 @@ public class Generator {
             schema.setOneOf(null);
         }
 
-        if (keywordCount == 1) {
-            // This can be either allOf, anyOf or oneOf.
-            // ALlOf : You have to combine each allOf condition with the body. This is not overridding, for example two multipleOf's should be present, not one.
-            // OneOf : Y
-        }
+        // There are only one combining keyword present in the schema beyond this point.
         if (schema.getAnyOf() != null) {
             List<Object> anyOf = schema.getAnyOf();
+            List<String> typeList = new ArrayList<>();
             schema.setAnyOf(null);
-            for (Object element : anyOf) {
+
+            name = resolveNameConflicts(name, nodes);
+            nodes.put(name, NodeParser.parseModuleMemberDeclaration(""));
+
+            for (int i = 0; i < anyOf.size(); i++) {
+                Object element = anyOf.get(i);
                 Object anyOfSchema = combineSubSchemas(schema, element);
+                String type = convert(anyOfSchema, resolveNameConflicts(name + "AnyOf" + i, nodes), nodes);
+                typeList.add(type);
             }
+
+            String typeDefinition = TYPE + WHITESPACE + name + WHITESPACE + String.join("|", typeList) + SEMI_COLON;
+            // TODO: Set the id to this.
+
+            ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(typeDefinition);
+            nodes.put(name, moduleNode);
+            return name;
+        }
+
+        //TODO: Other combining keywords
+        if (schema.getOneOf() != null) {
+        }
+        if (schema.getAllOf() != null) {
         }
 
         ArrayList<Object> schemaType = getCommonType(schema.getEnumKeyword(), schema.getConstKeyword(), schema.getType());
