@@ -6,25 +6,83 @@ import java.util.stream.Stream;
 public class Merger {
     public static Schema combineAllOfSchemas(Schema schema1, Schema schema2) {
         //TODO: This will combine 2 schemas. Will perform the function of AllOf combination for non conflicting items.
+
+        // List<Object> prefixItems, : AllOf this together with the items
+        // Object items,
+        // Object contains,
+        // Object additionalProperties,
+        // Map<String, Object> properties,
+        // Map<String, Object> patternProperties,
+        // Map<String, Object> dependentSchema,
+        // Object propertyNames,
+        // Object ifKeyword,
+        // Object then,
+        // Object elseKeyword,
+        // List<Object> allOf,
+        // List<Object> oneOf,
+        // List<Object> anyOf,
+        // Object not,
+        // String contentEncoding,
+        // String contentMediaType,
+        // Object content,
+        // String $id,
+        // String $schema,
+        // String $ref,
+        // String $anchor,
+        // String $dynamicRef,
+        // String $dynamicAnchor,
+        // String $vocabulary,
+        // String $comment,
+        // Map<String, Object> $defs,
+        // String format,
+        // String title,
+        // String description,
+        // Object defaultKeyword,
+        // Boolean deprecated,
+        // Boolean readOnly,
+        // Boolean writeOnly,
+        // List<Object> examples,
+        // Object unevaluatedItems,
+        // Object unevaluatedProperties,
+        // ArrayList<String> type,
+        // Object constKeyword,
+        // ArrayList<Object> enumKeyword,
+        // Double multipleOf,
+        // Double maximum,
+        // Double exclusiveMaximum,
+        // Double minimum,
+        // Double exclusiveMinimum,
+        // Long maxLength,
+        // Long minLength,
+        // String pattern,
+        // Long maxItems,
+        // Long minItems,
+        // Boolean uniqueItems,
+        // Long maxContains,
+        // Long minContains,
+        // Long maxProperties,
+        // Long minProperties,
+        // List<String> required,
+        // Map<String, List<String>> dependentRequired
         Schema schema = new Schema();
         return schema1;
     }
 
-    public static Object combineSubSchemas(Object mainSchemaObject, Object subSchemaObject) {
+    public static Object[] combineSubSchemas(Object mainSchemaObject, Object subSchemaObject) {
         // Handling the case where mainSchemaObject or subSchemaObject is a boolean
         if (mainSchemaObject instanceof Boolean && subSchemaObject instanceof Schema) {
-            return (Schema) subSchemaObject;
+            return new Object[]{false, subSchemaObject};
         }
         if (mainSchemaObject instanceof Schema && subSchemaObject instanceof Boolean) {
-            return (Schema) mainSchemaObject;
+            return new Object[]{false, mainSchemaObject};
         }
         if (mainSchemaObject instanceof Boolean && subSchemaObject instanceof Boolean) {
-            return (Boolean) mainSchemaObject && (Boolean) subSchemaObject;
+            return new Object[]{false, (Boolean) mainSchemaObject && (Boolean) subSchemaObject};
         }
 
         // Both the mainSchemaObject and the subSchemaObject are Schemas
-        Schema mainSchema = null;
-        Schema subSchema = null;
+        Schema mainSchema;
+        Schema subSchema;
         if (mainSchemaObject instanceof Schema && subSchemaObject instanceof Schema) {
             mainSchema = (Schema) mainSchemaObject;
             subSchema = (Schema) subSchemaObject;
@@ -42,6 +100,7 @@ public class Merger {
 
         // Object items,
         // List<Object> PrefixItems & Object items
+        // TODO: complete this part using the sizes of hte prefixItems list and then merging the intersection between that and the items part.
         if (mainSchema.getPrefixItems() == null || mainSchema.getPrefixItems().isEmpty()) {
             newSchema.setPrefixItems(subSchema.getPrefixItems());
         } else {
@@ -149,9 +208,9 @@ public class Merger {
         } else if (subSchema.getAllOf() == null || subSchema.getAllOf().isEmpty()) {
             newSchema.setAllOf(mainSchema.getAllOf());
         } else {
-            annotationRequired = true;
-            AllOfSchema1.setAllOf(mainSchema.getAllOf());
-            AllOfSchema2.setAllOf(subSchema.getAllOf());
+            List<Object> combinedAllOf = new ArrayList<>(mainSchema.getAllOf());
+            combinedAllOf.addAll(subSchema.getAllOf());
+            newSchema.setAllOf(combinedAllOf);
         }
 
         // List<Object> oneOf,
@@ -232,6 +291,7 @@ public class Merger {
         // Object unevaluatedItems,
 
         // ArrayList<String> type,
+        //TODO: Handle integer, number issue here.
         if (mainSchema.getType() == null) {
             newSchema.setType(subSchema.getType());
         } else {
@@ -252,7 +312,7 @@ public class Merger {
         } else if (mainSchema.getConstKeyword().equals(subSchema.getConstKeyword())) {
             newSchema.setConstKeyword(mainSchema.getConstKeyword());
         } else {
-            return false;
+            return new Object[]{false ,false};
         }
 
         // ArrayList<Object> enumKeyword,
@@ -432,7 +492,11 @@ public class Merger {
             newSchema.setDependentRequired(newDependentRequired);
         }
 
-        return newSchema;
+        if (annotationRequired) {
+            newSchema.getAllOf().add(AllOfSchema1);
+            newSchema.getAllOf().add(AllOfSchema2);
+        }
+        return new Object[]{annotationRequired, newSchema};
     }
 
 

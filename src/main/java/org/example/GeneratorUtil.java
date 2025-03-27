@@ -46,7 +46,7 @@ public class GeneratorUtil {
     public static final String NULL = "()";
     public static final String JSON = "json";
     public static final String UNIVERSAL_ARRAY = "json[]";
-    public static final String UNIVERSAL_OBJECT = "record{}";
+    public static final String UNIVERSAL_OBJECT = "record{|json...;|}";
     public static final String DEFAULT_SCHEMA_NAME = "Schema";
     public static final String DEPENDENT_SCHEMA = "dependentSchema";
     public static final String DEPENDENT_REQUIRED = "dependentRequired";
@@ -58,6 +58,7 @@ public class GeneratorUtil {
     public static final String OBJECT_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "ObjectValidation";
     public static final String DEPENDENT_SCHEMA_ANNOTATION = AT + ANNOTATION_MODULE + COLON + DEPENDENT_SCHEMA;
     public static final String DEPENDENT_REQUIRED_ANNOTATION = AT + ANNOTATION_MODULE + COLON + DEPENDENT_REQUIRED;
+    public static final String ONE_OF_ANNOTATION = AT + "OneOf";
 
     public static final String MINIMUM = "minimum";
     public static final String EXCLUSIVE_MINIMUM = "exclusiveMinimum";
@@ -321,6 +322,10 @@ public class GeneratorUtil {
     public static String createObject(Map<String, ModuleMemberDeclarationNode> nodes, String name, Object additionalProperties, Map<String, Object> properties, Map<String, Object> patternProperties, Map<String, Object> dependentSchema, Object propertyNames, Object unevaluatedProperties, Long maxProperties, Long minProperties, Map<String, List<String>> dependentRequired, List<String> required) {
         if (propertyNames instanceof Boolean && !((Boolean) propertyNames)){
             return NEVER;
+        }
+
+        if (additionalProperties == null && properties == null && patternProperties == null && dependentSchema == null && propertyNames == null && unevaluatedProperties == null && maxProperties == null && minProperties == null && dependentRequired == null && required == null) {
+            return UNIVERSAL_OBJECT;
         }
 
         name = resolveNameConflicts(convertToPascalCase(name), nodes);

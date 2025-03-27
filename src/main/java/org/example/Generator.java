@@ -158,10 +158,50 @@ public class Generator {
             return name;
         }
 
-        //TODO: Other combining keywords
         if (schema.getOneOf() != null) {
+            List<Object> oneOf = schema.getOneOf();
+            List<String> typeList = new ArrayList<>();
+            schema.setOneOf(null);
+
+            name = resolveNameConflicts(name, nodes);
+            nodes.put(name, NodeParser.parseModuleMemberDeclaration(""));
+
+            for (int i = 0; i < oneOf.size(); i++) {
+                Object element = oneOf.get(i);
+                Object oneOfSchema = combineSubSchemas(schema, element);
+                String type = convert(oneOfSchema, resolveNameConflicts(name + "OneOf" + i, nodes), nodes);
+                typeList.add(type);
+            }
+
+            String typeDefinition = ONE_OF_ANNOTATION + NEW_LINE + TYPE + WHITESPACE + name + WHITESPACE + String.join("|", typeList) + SEMI_COLON;
+            // TODO: Set the id to this.
+
+            ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(typeDefinition);
+            nodes.put(name, moduleNode);
+            return name;
         }
+
         if (schema.getAllOf() != null) {
+            List<Object> allOf = schema.getAllOf();
+            List<String> typeList = new ArrayList<>();
+            schema.setAllOf(null);
+
+            name = resolveNameConflicts(name, nodes);
+            nodes.put(name, NodeParser.parseModuleMemberDeclaration(""));
+
+            for (int i = 0; i < allOf.size(); i++) {
+                Object element = allOf.get(i);
+                Object allOfSchema = combineSubSchemas(schema, element);
+                String type = convert(allOfSchema, resolveNameConflicts(name + "AllOf" + i, nodes), nodes);
+                typeList.add(type);
+            }
+
+            String typeDefinition = ONE_OF_ANNOTATION + NEW_LINE + TYPE + WHITESPACE + name + WHITESPACE + String.join("|", typeList) + SEMI_COLON;
+            // TODO: Set the id to this.
+
+            ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(typeDefinition);
+            nodes.put(name, moduleNode);
+            return name;
         }
 
         ArrayList<Object> schemaType = getCommonType(schema.getEnumKeyword(), schema.getConstKeyword(), schema.getType());
